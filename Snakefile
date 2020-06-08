@@ -24,10 +24,10 @@ def resolve_path(x):
     return Path(x).resolve().as_posix()
 
 
+bbmap = 'shub://TomHarrop/seq-utils:bbmap_38.76'
+bioconductor = 'shub://TomHarrop/r-containers:bioconductor_3.11'
 minimap2 = 'shub://TomHarrop/singularity-containers:minimap2_2.17r941'
 samtools = 'shub://TomHarrop/align-utils:samtools_1.10'
-bbmap = 'shub://TomHarrop/seq-utils:bbmap_38.76'
-mummer = 'shub://TomHarrop/singularity-containers:mummer_4.0.0beta2'
 
 spec_to_fna = {
     'Pcad': 'data/GCF_001313835.1_ASM131383v1_genomic.fna',
@@ -54,54 +54,28 @@ all_spec = sorted(set([
 
 rule target:
     input:
-        # expand('output/01_mummer/{ref}.{query}/out.filtered.coords',
-        #        ref=['Vvulg'],
-        #        query=all_spec),
-        expand('output/02_minimap/{ref}.{query}/align.bam',
-               ref=['Vvulg'],
-               query=all_spec)
+        'output/03_gviz/gviz_bamfiles.pdf'
 
-rule process_mummer:
+
+rule gviz_bamfiles:
     input:
-        'output/01_mummer/{ref}.{query}/out.delta'
+        bamfiles = expand('output/02_minimap/{ref}.{query}/align.bam',
+                          ref=['Vvulg'],
+                          query=all_spec),
+        fa = 'data/Vvulg.assembly.fna',
+        gff = 'data/Vvulg_final_sorted.gff3'
     output:
-        'output/01_mummer/{ref}.{query}/out.filtered.delta',
-        'output/01_mummer/{ref}.{query}/out.filtered.coords'
-    log:
-        resolve_path('output/logs/process_mummer.{ref}.{query}.log')
+        txdb = 'output/03_gviz/txdb.sqlite',
+        plot = 'output/03_gviz/gviz_bamfiles.pdf'
     params:
-        wd = 'output/01_mummer/{ref}.{query}',
-    singularity:
-        mummer
-    shell:
-        'cd {params.wd} || exit 1 ; '
-        'delta-filter -m -i 90 -l 100 out.delta '
-        '> out.filtered.delta '
-        '2> {log} ; '
-        'show-coords -THrd out.filtered.delta '
-        '> out.filtered.coords '
-        '2>> {log}'
-
-rule mummer:
-    input:
-        unpack(resolve_input)
-    output:
-        'output/01_mummer/{ref}.{query}/out.delta',
-        'output/01_mummer/{ref}.{query}/out.1coords',
-        'output/01_mummer/{ref}.{query}/out.report'
+        width = 483,        # point
+        height = 483 // 2   # point
     log:
-        resolve_path('output/logs/mummer.{ref}.{query}.log')
-    params:
-        wd = 'output/01_mummer/{ref}.{query}',
-        ref = lambda wildcards, input: resolve_path(input.ref),
-        query = lambda wildcards, input: resolve_path(input.query)
+        'output/logs/gviz_bamfiles.log'
     singularity:
-        mummer
-    shell:
-        'cd {params.wd} || exit 1 ; '
-        'dnadiff {params.ref} {params.query} '
-        '&> {log}'
-
+        bioconductor
+    script:
+        'src/gviz_bamfiles.R'
 
 rule minimap2:
     input:
@@ -124,7 +98,6 @@ rule minimap2:
         '{input.query} '
         '> {output} '
         '2> {log}'
-
 
 rule extract_chr:
     input:
@@ -155,5 +128,3 @@ rule sam_to_bam:
         'samtools sort - '
         '> {output.bam} ; '
         'samtools index {output.bam}'
-
-

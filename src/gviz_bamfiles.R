@@ -1,11 +1,14 @@
 #!/usr/bin/env Rscript
 
+log <- file(snakemake@log[[1]], open = "wt")
+sink(log, type = "message")
+sink(log, type = "output", append = TRUE)
+
 library(data.table)
 library(Gviz)
 library(GenomicFeatures)
 library(GenomicRanges)
 library(GenomicAlignments)
-
 
 #############
 # FUNCTIONS #
@@ -34,17 +37,22 @@ MakeAt <- function(x, bamfile, st, chromosome, start, end, aln_scheme) {
 
 options(ucscChromosomeNames=FALSE)
 
-fasta_file <- "data/Vvulg.assembly.fna"
-gff_file <- "data/Vvulg_final_sorted.gff3"
-txdb_file <- "data/txdb.sqlite"
+fasta_file <- snakemake@input[["fa"]]
+gff_file <- snakemake@input[["gff"]]
+txdb_file <- snakemake@output[["txdb"]]
+
+# dev
+# fasta_file <- "data/Vvulg.assembly.fna"
+# gff_file <- "data/Vvulg_final_sorted.gff3"
+# txdb_file <- "data/txdb.sqlite"
 
 # bamfiles
-bamfiles <- list.files("output/02_minimap",
-                       pattern = "align.bam$",
-                       recursive = TRUE,
-                       full.names = TRUE)
+# bamfiles <- list.files("output/02_minimap",
+#                        pattern = "align.bam$",
+#                        recursive = TRUE,
+#                        full.names = TRUE)
+bamfiles <- snakemake@input[["bamfiles"]]
 names(bamfiles) <- gsub("^.*/Vvulg.([[:alpha:]]+)/.*$", "\\1", bamfiles)
-
 
 spec_order <- c("Pcad" = " \nP. canadensis",
   "Pdomi" = " \nP. dominula",
@@ -209,10 +217,12 @@ ht1 <- HighlightTrack(trackList = full_tracklist,
                       alpha = 0.5)
 
 
-wo <- grid::convertUnit(unit(483, "pt"), "in", valueOnly = TRUE)
-ho <- wo / 2
+wo <- grid::convertUnit(unit(as.integer(snakemake@params[["width"]]), "pt"),
+                        "in", valueOnly = TRUE)
+ho <- grid::convertUnit(unit(as.integer(snakemake@params[["height"]]), "pt"),
+                        "in", valueOnly = TRUE)
 
-cairo_pdf("nasty.pdf",
+cairo_pdf(snakemake@output[["plot"]],
           width = wo,
           height = ho,
           pointsize = 8)
@@ -227,3 +237,4 @@ plotTracks(ht1,
 
 dev.off()
 
+sessionInfo()
