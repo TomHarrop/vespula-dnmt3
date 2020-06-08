@@ -18,7 +18,6 @@ library(GenomicAlignments)
 MakeAt <- function(x, bamfile, st, chromosome, start, end, aln_scheme) {
     my_at <- AlignmentsTrack(range = bamfile,
                              isPaired = FALSE,
-                             # referenceSequence = st,
                              name = x,
                              chromosome = chr,
                              start = start,
@@ -54,13 +53,13 @@ txdb_file <- snakemake@output[["txdb"]]
 bamfiles <- snakemake@input[["bamfiles"]]
 names(bamfiles) <- gsub("^.*/Vvulg.([[:alpha:]]+)/.*$", "\\1", bamfiles)
 
-spec_order <- c("Pcad" = " \nP. canadensis",
-  "Pdomi" = " \nP. dominula",
-  "Pdor" = " \nP. dorsalis",
-  "Pfus" = " \nP. fuscatus",
-  "Pmet" = " \nP. metricus",
-  "Vgerm" = " \nV. germanica",
-  "Vpens" = " \nV. pensylvanica")
+spec_order <- c("Pcad" = "P. canadensis",
+  "Pdomi" = "P. dominula",
+  "Pdor" = "P. dorsalis",
+  "Pfus" = "P. fuscatus",
+  "Pmet" = "P. metricus",
+  "Vgerm" = "V. germanica",
+  "Vpens" = "V. pensylvanica")
 
 names(bamfiles) <- plyr::revalue(names(bamfiles[names(spec_order)]), spec_order)
 
@@ -77,23 +76,15 @@ my_scheme <- list(
     fontface.title = 1,
     col.title = "black",
     col.frame = "black",
-    thinBoxFeature = c("lincRNA"),
-    # fontcolor.group = set1[1],
-    cex.title = 0.5,
-    cex.group = 0.5,
-    showTitle=TRUE
-)
+    cex.title = 1,
+    showTitle = TRUE)
 
 gat_scheme <- as.list(c(
     my_scheme,
-    showTitle = TRUE,
     col = "black",
     fontcolor = "black",
-    cex.title = 1,
     col.title = "black",
-    cex = 0.5,
     showTitle = TRUE,
-    cex.title = 0.5,
     rotation.title = 0,
     fontface.title = "bold"
 ))
@@ -101,16 +92,13 @@ gat_scheme <- as.list(c(
 grt_scheme <- as.list(c(
     my_scheme,
     col.frame = set1[1],
-    # fontcolor.group = set1[2],
-    # fontcolor.title = set1[2],
     size = 1,
     col = set1[1],
     col.line = set1[1],
     fill = set1[1],
-    fontface.group = 3,
+    fontface.group = "italic",
     fontface.title = "italic",
     transcriptAnnotation = "name",
-    cex.title = 0.5,
     rotation.title = 0
 ))
 
@@ -121,14 +109,10 @@ aln_scheme <- as.list(c(
     col.line = NA,
     alpha = 1,
     alpha.reads = 1,
-    max.height = 1000,
-    min.height = 1000,
     stackHeight = 1,
     coverageHeight = 0,
-    minCoverageHeight = 0,
     rotation.title = 0,
     fontface.title = "italic",
-    # fontcolor.title = set1[3],
     type = c("pileup")))
 
 ########
@@ -166,10 +150,6 @@ cds <- cdsBy(txdb, "gene")
 
 # find dmnt3 in the txdb
 dnmt3_transcripts <- tx$Vvulg11g01820
-dnmt3_exons <- exons$Vvulg11g01820
-dnmt3_cds <- cds$Vvulg11g01820
-dnmt3_cds$cds_name <- "Dnmt3"
-dnmt3_cds$id <- dnmt3_cds$cds_name
 
 # define ranges to plot
 extra_width <- 10e3
@@ -228,12 +208,10 @@ cairo_pdf(snakemake@output[["plot"]],
           pointsize = 8)
 
 plotTracks(ht1,
-           # cex.main = 2,
-           # fontface.main = 1,
            add = FALSE,
            from = start,
            to = end,
-           title.width = 2.2)
+           title.width = 4.4)
 
 dev.off()
 
